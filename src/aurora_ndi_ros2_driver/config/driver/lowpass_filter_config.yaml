@@ -1,0 +1,108 @@
+lowpass_filter_node:
+  ros__parameters:
+    # =========================================================================
+    # Topic Configuration
+    # =========================================================================
+    # Input topic (raw Aurora data)
+    input_topic: "aurora/sensor0"
+
+    # Output topic suffix (filtered data will be published to: input_topic + suffix)
+    # Example: aurora/sensor0 + /lowpass_filter = aurora/sensor0/lowpass_filter
+    output_topic_suffix: "/lowpass_filter"
+
+    # =========================================================================
+    # Low-pass Filter Enable/Disable
+    # =========================================================================
+    # Set to 'true' to enable low-pass filtering and publish filtered topic
+    # Set to 'false' to disable filtering (no filtered topic will be published)
+    enable_lowpass_filter: true
+
+    # =========================================================================
+    # Low-pass Filter Parameters
+    # =========================================================================
+    # First-order low-pass filter (exponential moving average)
+    # Formula: y[n] = alpha * x[n] + (1 - alpha) * y[n-1]
+    # where alpha = dt / (RC + dt), RC = 1 / (2 * pi * cutoff_frequency)
+
+    # Cutoff frequency (Hz)
+    # Frequencies above this will be attenuated
+    # For endoscopic movement (slow):
+    #   - 2-5 Hz: Strong smoothing, good for very slow movement
+    #   - 5-10 Hz: Moderate smoothing, good for typical endoscopic movement
+    #   - 10-15 Hz: Light smoothing, preserves faster movements
+    cutoff_frequency_hz: 5.0
+
+    # Sample rate (Hz)
+    # This should match your Aurora publisher rate (typically 40 Hz)
+    sample_rate_hz: 40.0
+
+    # =========================================================================
+    # Data Quality Filtering
+    # =========================================================================
+    # Only process measurements that meet quality criteria
+
+    # Require sensor to be visible (tracked by Aurora)
+    require_visible: true
+
+    # Maximum acceptable RMS error from Aurora (mm)
+    # Reject measurements with error > threshold
+    # Set to 0.0 to disable error threshold filtering
+    max_error_threshold: 5.0
+
+# =========================================================================
+# TUNING GUIDE - Low-pass Filter
+# =========================================================================
+#
+# The low-pass filter is simpler than Kalman filter and has only one main
+# parameter to tune: cutoff_frequency_hz
+#
+# HOW IT WORKS:
+# - Frequencies BELOW cutoff_frequency_hz pass through mostly unchanged
+# - Frequencies ABOVE cutoff_frequency_hz are attenuated (smoothed out)
+# - The filter introduces a small delay: ~1 / (2 * pi * cutoff_freq)
+#
+# CHOOSING CUTOFF FREQUENCY:
+#
+# LOWER cutoff frequency (1-3 Hz):
+#   + More noise reduction (smoother output)
+#   + Better for very slow, deliberate movements
+#   - More delay/lag in response
+#   - May lose some real movement details
+#   Example: cutoff_frequency_hz: 2.0
+#
+# MEDIUM cutoff frequency (4-8 Hz):
+#   + Good balance between smoothing and responsiveness
+#   + Suitable for typical endoscopic movement speeds
+#   + Moderate delay (~20-40 ms)
+#   Example: cutoff_frequency_hz: 5.0  # CURRENT DEFAULT
+#
+# HIGHER cutoff frequency (10-15 Hz):
+#   + Less delay, more responsive
+#   + Preserves faster movements better
+#   - Less noise reduction
+#   - May still show some jitter
+#   Example: cutoff_frequency_hz: 10.0
+#
+# TUNING PROCEDURE:
+# 1. Start with cutoff_frequency_hz: 5.0 (current default)
+# 2. Move endoscope at typical operating speed
+# 3. Observe filtered output:
+#    - Too much lag/delay? INCREASE cutoff frequency
+#    - Too noisy/jittery? DECREASE cutoff frequency
+# 4. Typical range for endoscopic applications: 3-10 Hz
+#
+# COMPARISON WITH KALMAN FILTER:
+# - Low-pass filter: Simpler, more predictable, fixed delay
+# - Kalman filter: More sophisticated, adapts to measurement quality,
+#   can handle irregular sample rates better
+# - For endoscopic tracking, either can work well!
+# - Try both and see which gives better results for your application
+#
+# DELAY CALCULATION:
+# Approximate group delay = 1 / (2 * pi * cutoff_freq)
+# Examples:
+#   - cutoff_freq = 2 Hz  → delay ≈ 80 ms
+#   - cutoff_freq = 5 Hz  → delay ≈ 32 ms
+#   - cutoff_freq = 10 Hz → delay ≈ 16 ms
+#
+# =========================================================================

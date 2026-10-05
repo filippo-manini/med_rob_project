@@ -1,0 +1,22 @@
+delay_analyzer_node:
+  ros__parameters:
+    # =========================================================================
+    # Topic Configuration
+    # =========================================================================
+    # Topic names to subscribe to for delay analysis
+
+    # Raw Aurora data topic (from aurora_publisher_node)
+    raw_topic: "aurora/sensor0"
+
+    # Low-pass filtered data topic (from lowpass_filter_node)
+    lowpass_topic: "aurora/sensor0/lowpass_filter"
+
+    # Kalman filtered data topic (from kalman_filter_node)
+    kalman_topic: "aurora/sensor0/kalman_filter"
+
+    # =========================================================================
+    # Analysis Duration
+    # =========================================================================
+    # Duration in seconds to collect data before computing statistics
+    # After this time, the node will print results and shutdown
+    duration_sec: 30.0

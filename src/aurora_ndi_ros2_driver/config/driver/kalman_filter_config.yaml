@@ -1,0 +1,95 @@
+kalman_filter_node:
+  ros__parameters:
+    # =========================================================================
+    # Topic Configuration
+    # =========================================================================
+    # Input topic (raw Aurora data)
+    input_topic: "aurora/sensor0"
+
+    # Output topic suffix (filtered data will be published to: input_topic + suffix)
+    # Example: aurora/sensor0 + /kalman_filter = aurora/sensor0/kalman_filter
+    output_topic_suffix: "/kalman_filter"
+
+    # =========================================================================
+    # Kalman Filter Enable/Disable
+    # =========================================================================
+    # Set to 'true' to enable Kalman filtering and publish filtered topic
+    # Set to 'false' to disable filtering (no filtered topic will be published)
+    enable_kalman_filter: true
+
+    # =========================================================================
+    # Kalman Filter - Measurement Noise (from calibration)
+    # =========================================================================
+    # These values come from noise_calibration_results.yaml
+    # They represent the variance (std^2) of sensor measurements
+
+    # Position measurement noise variance (mm^2)
+    # From calibration: std = [0.0147516, 0.0226752, 0.0454902] mm
+    # Using max std: 0.0454902^2 = 0.00206936 mm^2
+    measurement_noise_position: 0.00206936
+
+    # Orientation measurement noise variance (quaternion components)
+    # From calibration: std = [0.000793093, 0.000171675, 0.000887451, 0.000239245]
+    # Using max std: 0.000887451^2 = 7.87569e-07
+    measurement_noise_orientation: 7.87569e-07
+
+    # =========================================================================
+    # Kalman Filter - Process Noise (motion model uncertainty)
+    # =========================================================================
+    # These values represent how much we expect position/orientation to change
+    # between consecutive measurements due to endoscope movement
+
+    # Position process noise variance (mm^2)
+    # For VERY slow movement (~1 mm/s @ 40Hz sample rate):
+    # Expected change per sample: 1mm/s / 40Hz = 0.025 mm
+    # Very conservative variance: (0.03 mm)^2 = 0.0009 mm^2
+    # TUNE THIS if endoscope moves faster or needs more/less smoothing
+    process_noise_position: 0.0009
+
+    # Orientation process noise variance (quaternion components)
+    # For VERY slow rotational movement (~1 deg/s @ 40Hz):
+    # Expected quaternion change per sample is extremely small
+    # Very conservative variance: ~1e-7
+    # TUNE THIS if rotation is faster or needs more/less smoothing
+    process_noise_orientation: 1.0e-7
+
+    # =========================================================================
+    # Data Quality Filtering
+    # =========================================================================
+    # Only process measurements that meet quality criteria
+
+    # Require sensor to be visible (tracked by Aurora)
+    require_visible: true
+
+    # Maximum acceptable RMS error from Aurora (mm)
+    # Reject measurements with error > threshold
+    # Set to 0.0 to disable error threshold filtering
+    max_error_threshold: 5.0
+
+# =========================================================================
+# TUNING GUIDE
+# =========================================================================
+#
+# Process Noise vs Measurement Noise tradeoff:
+#
+# HIGHER process_noise_position / process_noise_orientation:
+#   - Filter trusts measurements MORE
+#   - Faster response to actual movement
+#   - Less smoothing (noisier output)
+#   - Use if endoscope moves quickly
+#
+# LOWER process_noise_position / process_noise_orientation:
+#   - Filter trusts measurements LESS
+#   - Slower response to actual movement
+#   - More smoothing (smoother output)
+#   - Use if endoscope moves slowly or is nearly stationary
+#
+# Recommended tuning procedure:
+# 1. Start with current values (slow movement assumption)
+# 2. Move endoscope at typical speed and observe filtered output
+# 3. If output is too slow/laggy: INCREASE process noise
+# 4. If output is too noisy/jittery: DECREASE process noise
+# 5. Typical range for position: 0.001 - 0.1 mm^2
+# 6. Typical range for orientation: 1e-7 - 1e-5
+#
+# =========================================================================

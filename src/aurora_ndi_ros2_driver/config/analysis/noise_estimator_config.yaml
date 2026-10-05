@@ -1,0 +1,124 @@
+noise_estimator_node:
+  ros__parameters:
+    # =========================================================================
+    # Sensor Configuration
+    # =========================================================================
+    # Must match the sensors configured in aurora_tracking_config.yaml
+    num_sensors: 1
+    topic_names:
+      - "/aurora_data_sensor0"
+
+    # =========================================================================
+    # Data Collection Parameters
+    # =========================================================================
+    # Minimum number of samples required before computing statistics
+    # Recommendation: At least 100 samples for reliable statistics
+    min_samples: 100
+
+    # Maximum number of samples to collect (0 = unlimited)
+    # For batch mode: node will exit after collecting this many samples
+    # Recommendation: 500-1000 samples for good statistics (12-25 seconds @ 40Hz)
+    max_samples: 1000
+
+    # Maximum duration for data collection in seconds (0 = unlimited)
+    # Node will stop after this duration even if max_samples not reached
+    # Recommendation: 30 seconds is usually sufficient
+    collection_duration_sec: 30.0
+
+    # =========================================================================
+    # Operating Mode
+    # =========================================================================
+    # Batch mode: Collect max_samples then print results and exit
+    # Continuous mode: Keep running and publish statistics periodically
+    # Recommendation: Use batch_mode=true for calibration
+    batch_mode: true
+
+    # Start collecting data immediately on node startup
+    # If false, you would need to trigger collection via service (future feature)
+    auto_start: true
+
+    # Rate (Hz) to publish statistics in continuous mode
+    # Ignored in batch mode
+    publish_rate_hz: 1.0
+
+    # =========================================================================
+    # Data Filtering
+    # =========================================================================
+    # Only process samples where sensor is marked as visible
+    # Recommendation: true - invisible samples are not useful for noise estimation
+    require_visible: true
+
+    # Maximum acceptable error threshold (mm)
+    # Samples with error > this value will be rejected
+    # Set to 0 to disable error filtering
+    # Recommendation: 5.0 mm - reject very poor quality measurements
+    max_error_threshold: 5.0
+
+    # =========================================================================
+    # Output Configuration
+    # =========================================================================
+    # Save results to YAML file for later use in Kalman filter configuration
+    save_to_file: true
+
+    # Output file path (relative to workspace or absolute path)
+    # This file will contain recommended Kalman filter parameters
+    output_file: "noise_calibration_results.yaml"
+
+    # Print detailed statistics to console
+    # Recommendation: true for calibration, false for continuous monitoring
+    verbose: true
+
+# =========================================================================
+# USAGE INSTRUCTIONS
+# =========================================================================
+#
+# 1. PREPARATION:
+#    - Place the Aurora sensor in a stable position within the tracking volume
+#    - Ensure the sensor is COMPLETELY STATIONARY (e.g., fixed to a rigid mount)
+#    - Make sure the sensor is visible and has good tracking quality
+#
+# 2. RUN CALIBRATION:
+#    ros2 launch aurora_ndi_ros2_driver aurora_noise_calibration.launch.py
+#
+# 3. WAIT FOR COMPLETION:
+#    - The node will collect 1000 samples (about 25 seconds @ 40Hz)
+#    - Progress will be displayed every 50 samples
+#    - Do NOT move the sensor during collection!
+#
+# 4. RESULTS:
+#    - Statistics will be printed to console
+#    - Results saved to noise_calibration_results.yaml
+#    - Use the recommended parameters in kalman_filter_config.yaml
+#
+# 5. INTERPRETATION:
+#    - Position RMS: Total positional noise magnitude (typical: 0.5-1.5 mm)
+#    - Position Std Dev: Noise per axis (should be similar in all axes)
+#    - Orientation Std Dev: Quaternion component noise (typical: 0.001-0.01)
+#    - Error Mean: Aurora's internal error estimate (typical: 0.5-2.0 mm)
+#
+# 6. TROUBLESHOOTING:
+#    - High position RMS (>2mm): Check for vibrations, metal interference
+#    - Many rejected samples: Check max_error_threshold, sensor visibility
+#    - Uneven axis noise: Possible field distortion, reposition sensor
+#
+# =========================================================================
+# ADVANCED USAGE
+# =========================================================================
+#
+# For multiple sensors, extend the configuration:
+#
+# num_sensors: 2
+# topic_names:
+#   - "/aurora_data_sensor0"
+#   - "/aurora_data_sensor1"
+#
+# Each sensor will be calibrated independently.
+#
+# For continuous monitoring (diagnostics):
+#
+# batch_mode: false
+# max_samples: 0
+# collection_duration_sec: 0.0
+# publish_rate_hz: 5.0
+#
+# This will continuously compute and display noise statistics.
