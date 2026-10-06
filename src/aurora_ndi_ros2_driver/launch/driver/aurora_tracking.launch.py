@@ -46,11 +46,47 @@ def launch_setup(context):
     lowpass_config_file = LaunchConfiguration('lowpass_config_file').perform(context)
     log_level = LaunchConfiguration('log_level').perform(context)
     namespace = LaunchConfiguration('namespace').perform(context)
+    # Read sensor configuration from Aurora YAML
+    with open(config_file, 'r') as f:
+        config = yaml.safe_load(f)
+
+    params = config['aurora_publisher_node']['ros__parameters']
+
+    num_sensors = params['num_sensors']
+    topic_names = params['topic_names']
+
+    if (
+        len(topic_names) == 1
+        and isinstance(topic_names[0], list)
+    ):
+        topic_names = topic_names[0]
 
     # Read filter enable flags from main config
     enable_kalman, enable_lowpass = read_filter_config(config_file)
 
     nodes_to_launch = []
+        # Aurora reader
+    aurora_reader_node = Node(
+        package='robot_control',
+        executable='aurora_reader',
+        name='aurora_reader',
+        namespace=namespace,
+        parameters=[{
+            'num_sensors': num_sensors,
+            'topic_names': topic_names
+        }],
+        arguments=[
+            '--ros-args',
+            '--log-level', log_level
+        ],
+        output='screen',
+        emulate_tty=True,
+        respawn=True,
+        respawn_delay=3
+    )
+
+    nodes_to_launch.append(aurora_reader_node)
+
 
     # Kalman filter node (conditionally added)
     if enable_kalman:
@@ -187,6 +223,7 @@ def generate_launch_description():
         respawn=True,
         respawn_delay=3
     )
+    
     
     # =============================================================================
     # STATIC TRANSFORM PUBLISHER 

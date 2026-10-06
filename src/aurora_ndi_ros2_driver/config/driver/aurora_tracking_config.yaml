@@ -10,18 +10,18 @@ aurora_publisher_node:
     # =========================================================================
     
     # TOTAL number of sensors (including both regular and autoconfigured)
-    num_sensors: 1  # Total: 1 regular sensor (with ROM file)
+    num_sensors: 3  # Total: 1 regular sensor (with ROM file)
     
     # ROM files for sensors that need explicit ROM definition
     # For autoconfigured sensors (like NDI pens), do NOT include ROM file  
     # The length of this array should be: num_sensors - num_autoconfig_sensors
     tool_rom_files: 
       - "/workspace/src/aurora_ndi_ros2_driver/rom/610029_AuroraMini6DOF_1.8x9mm/610029-6DOF.rom"  # Sensor 0A
-    
+      - "/workspace/src/aurora_ndi_ros2_driver/rom/610029_AuroraMini6DOF_1.8x9mm/610029-6DOF.rom"  # Sensor 0B
     # Port handles for ALL sensors (in hexadecimal: 0A, 0B, 0C, 0D, etc.)
     # Must have num_sensors entries
     port_handles: 
-      - "0A"  # Port 1 - Regular sensor with ROM file
+      - ["0A", "0B", "0C"]  # Port 1 - Regular sensor with ROM file
     
     # =========================================================================
     # AUTOCONFIGURED PORTS (for NDI Pens with internal ROM)
@@ -30,7 +30,7 @@ aurora_publisher_node:
     # These sensors have internal ROM and don't need external ROM files
     # Example: NDI passive stylus pens
     port_handles_autoconfig: 
-      - ""  # Empty - no autoconfigured sensors
+      - "0C"  # Empty - no autoconfigured sensors
     
     # =========================================================================
     # ROS Topics and TF Frames
@@ -38,12 +38,11 @@ aurora_publisher_node:
     
     # Topic names for ALL sensors (must have num_sensors entries)
     topic_names:
-      - "aurora/sensor0"  # Sensor 0A (regular)
-    
+      - ["aurora/sensor0", "aurora/sensor1", "aurora/sensor2"] # Sensor 0A and 0B and Pen (regular)
+
     # Child frame names for TF for ALL sensors (must have num_sensors entries)
     child_frame_names:
-      - "endo_aurora_sensor0"   # Sensor 0A (regular)
-    
+      - ["endo_aurora_sensor0", "endo_aurora_sensor1", "aurora_pen"]   # Sensor 0A and 0B and Pen (regular)
     # Common reference frame for all sensors
     frame_id: "aurora_base"
     
