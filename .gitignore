@@ -17,3 +17,4 @@ __pycache__/
 
 # OS
 .DS_Store
+src/aurora_ndi_ros2_driver/
